@@ -24,6 +24,7 @@ import com.kztutorial.termuxiwx.databinding.ActivityMainBinding;
 import com.kztutorial.termuxiwx.models.Package;
 import com.kztutorial.termuxiwx.ui.adapters.PackageAdapter;
 import com.kztutorial.termuxiwx.ui.ScriptRepoActivity;
+import com.kztutorial.termuxiwx.ui.SettingsActivity;
 import com.kztutorial.termuxiwx.utils.CommandResultReceiver;
 import com.kztutorial.termuxiwx.utils.TermuxConnector;
 
@@ -282,6 +283,9 @@ public class MainActivity extends AppCompatActivity {
             return true;
         } else if (item.getItemId() == R.id.action_storage) {
             TermuxConnector.getStorageInfo(this, buildPendingIntent());
+            return true;
+        } else if (item.getItemId() == R.id.action_settings) {
+            startActivity(new Intent(this, SettingsActivity.class));
             return true;
         } else if (item.getItemId() == R.id.action_about) {
             showAbout();
