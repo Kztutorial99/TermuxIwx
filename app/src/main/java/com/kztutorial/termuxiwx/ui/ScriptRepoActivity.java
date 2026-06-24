@@ -28,22 +28,26 @@ public class ScriptRepoActivity extends AppCompatActivity {
     private static final String ACTION_RESULT = "com.kztutorial.termuxiwx.SCRIPT_RESULT";
     private ActivityScriptRepoBinding binding;
     private ScriptAdapter adapter;
-    private List<ScriptItem> allScripts = new ArrayList<>();
-    private List<ScriptItem> filteredScripts = new ArrayList<>();
+    private final List<ScriptItem> allScripts = new ArrayList<>();
+    private final List<ScriptItem> filteredScripts = new ArrayList<>();
     private ScriptItem pendingInstall = null;
 
     private final BroadcastReceiver resultReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
+            if (intent == null) return;
             Bundle extras = intent.getExtras();
             Bundle result = extras != null ? extras.getBundle("result") : null;
             int exitCode = result != null ? result.getInt("exitCode", -1) : -1;
-            String stdout = result != null ? result.getString("stdout", "") : "";
             runOnUiThread(() -> {
                 if (exitCode == 0) {
-                    Toast.makeText(ScriptRepoActivity.this, "✅ " + (pendingInstall != null ? pendingInstall.name : "Tool") + " berhasil diinstall!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(ScriptRepoActivity.this,
+                        "✅ " + (pendingInstall != null ? pendingInstall.getName() : "Tool") + " berhasil diinstall!",
+                        Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(ScriptRepoActivity.this, "❌ Gagal install. Cek Console untuk detail.", Toast.LENGTH_LONG).show();
+                    Toast.makeText(ScriptRepoActivity.this,
+                        "❌ Gagal install. Cek Console untuk detail.",
+                        Toast.LENGTH_LONG).show();
                 }
                 pendingInstall = null;
             });
@@ -87,7 +91,9 @@ public class ScriptRepoActivity extends AppCompatActivity {
         allScripts.add(new ScriptItem("openssh", "SSH client & server", "pkg install -y openssh", "Network", "ssh -V"));
         allScripts.add(new ScriptItem("net-tools", "ifconfig, netstat, route", "pkg install -y net-tools", "Network", "ifconfig --version"));
         allScripts.add(new ScriptItem("iproute2", "IP routing tools (ip cmd)", "pkg install -y iproute2", "Network", "ip --version"));
+        allScripts.add(new ScriptItem("tmate", "Terminal sharing via SSH", "pkg install -y tmate", "Network", "tmate -V"));
         allScripts.add(new ScriptItem("termux-api", "Termux Android API access", "pkg install -y termux-api", "Termux", "termux-info"));
+        allScripts.add(new ScriptItem("termux-setup-storage", "Enable storage access", "termux-setup-storage", "Termux", "ls ~/storage"));
         allScripts.add(new ScriptItem("ffmpeg", "Media converter & processor", "pkg install -y ffmpeg", "Media", "ffmpeg -version"));
         allScripts.add(new ScriptItem("imagemagick", "Image manipulation tool", "pkg install -y imagemagick", "Media", "convert --version"));
         allScripts.add(new ScriptItem("vim", "Advanced text editor", "pkg install -y vim", "Editor", "vim --version | head -1"));
@@ -98,34 +104,33 @@ public class ScriptRepoActivity extends AppCompatActivity {
         allScripts.add(new ScriptItem("zsh", "Z shell (alternative bash)", "pkg install -y zsh && chsh -s zsh", "Shell", "zsh --version"));
         allScripts.add(new ScriptItem("fish", "Friendly interactive shell", "pkg install -y fish", "Shell", "fish --version"));
         allScripts.add(new ScriptItem("oh-my-zsh", "Zsh framework & themes", "pkg install -y zsh && sh -c \"$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)\"", "Shell", "zsh --version"));
-        allScripts.add(new ScriptItem("tmate", "Terminal sharing via SSH", "pkg install -y tmate", "Network", "tmate -V"));
         allScripts.add(new ScriptItem("openjdk-17", "Java Development Kit 17", "pkg install -y openjdk-17", "Dev", "java --version"));
         allScripts.add(new ScriptItem("mariadb", "MySQL-compatible database", "pkg install -y mariadb", "Database", "mysql --version"));
         allScripts.add(new ScriptItem("postgresql", "PostgreSQL database", "pkg install -y postgresql", "Database", "psql --version"));
         allScripts.add(new ScriptItem("redis", "In-memory data store", "pkg install -y redis", "Database", "redis-server --version"));
-        allScripts.add(new ScriptItem("termux-setup-storage", "Enable storage access", "termux-setup-storage", "Termux", "ls ~/storage"));
         allScripts.add(new ScriptItem("pip packages", "Install common Python libs", "pip install requests beautifulsoup4 flask django numpy pandas", "Dev", "pip list"));
         filteredScripts.addAll(allScripts);
     }
 
     private void setupRecyclerView() {
-        adapter = new ScriptAdapter(filteredScripts, item -> showInstallDialog(item));
+        adapter = new ScriptAdapter(filteredScripts, this::showInstallDialog);
         binding.recyclerView.setLayoutManager(new LinearLayoutManager(this));
         binding.recyclerView.setAdapter(adapter);
+        binding.countText.setText(filteredScripts.size() + " tools");
     }
 
     private void showInstallDialog(ScriptItem item) {
         new AlertDialog.Builder(this)
-            .setTitle("📦 " + item.name)
-            .setMessage(item.description + "\n\nPerintah install:\n" + item.installCmd)
+            .setTitle("📦 " + item.getName())
+            .setMessage(item.getDescription() + "\n\nPerintah install:\n" + item.getInstallCmd())
             .setPositiveButton("⚡ Install", (d, w) -> {
                 pendingInstall = item;
-                TermuxConnector.customCommand(this, item.installCmd, buildPendingIntent());
-                Toast.makeText(this, "Menginstall " + item.name + "...", Toast.LENGTH_SHORT).show();
+                TermuxConnector.customCommand(this, item.getInstallCmd(), buildPendingIntent());
+                Toast.makeText(this, "Menginstall " + item.getName() + "...", Toast.LENGTH_SHORT).show();
             })
             .setNeutralButton("🖥 Buka Console", (d, w) -> {
                 Intent console = new Intent(this, ConsoleActivity.class);
-                console.putExtra("initial_cmd", item.installCmd);
+                console.putExtra("initial_cmd", item.getInstallCmd());
                 startActivity(console);
             })
             .setNegativeButton("Batal", null)
@@ -171,9 +176,9 @@ public class ScriptRepoActivity extends AppCompatActivity {
         filteredScripts.clear();
         for (ScriptItem item : allScripts) {
             boolean matchQuery = query.isEmpty()
-                || item.name.toLowerCase().contains(query)
-                || item.description.toLowerCase().contains(query);
-            boolean matchCat = category.equals("All") || item.category.equals(category);
+                || item.getName().toLowerCase().contains(query)
+                || item.getDescription().toLowerCase().contains(query);
+            boolean matchCat = category.equals("All") || item.getCategory().equals(category);
             if (matchQuery && matchCat) filteredScripts.add(item);
         }
         adapter.notifyDataSetChanged();

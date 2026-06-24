@@ -36,7 +36,8 @@ public class SettingsActivity extends AppCompatActivity {
         binding.inputTermuxPath.setText(settings.getTermuxPath());
 
         String[] shells = {"bash", "zsh", "fish", "sh"};
-        ArrayAdapter<String> shellAdapter = new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, shells);
+        ArrayAdapter<String> shellAdapter = new ArrayAdapter<>(this,
+                android.R.layout.simple_dropdown_item_1line, shells);
         binding.spinnerShell.setAdapter(shellAdapter);
         String currentShell = settings.getDefaultShell();
         for (int i = 0; i < shells.length; i++) {
@@ -47,9 +48,9 @@ public class SettingsActivity extends AppCompatActivity {
         }
 
         switch (settings.getFontSize()) {
-            case AppSettings.FONT_SMALL:  binding.rgFontSize.check(binding.rbFontSmall.getId()); break;
-            case AppSettings.FONT_LARGE:  binding.rgFontSize.check(binding.rbFontLarge.getId()); break;
-            default:                      binding.rgFontSize.check(binding.rbFontMedium.getId()); break;
+            case AppSettings.FONT_SMALL: binding.rgFontSize.check(binding.rbFontSmall.getId()); break;
+            case AppSettings.FONT_LARGE: binding.rgFontSize.check(binding.rbFontLarge.getId()); break;
+            default:                     binding.rgFontSize.check(binding.rbFontMedium.getId()); break;
         }
 
         binding.switchTheme.setChecked(settings.isLightTheme());
@@ -63,11 +64,10 @@ public class SettingsActivity extends AppCompatActivity {
     private void setupListeners() {
         binding.btnSave.setOnClickListener(v -> saveSettings());
 
-        binding.btnResetPath.setOnClickListener(v -> {
-            binding.inputTermuxPath.setText(AppSettings.DEFAULT_TERMUX_PATH);
-        });
+        binding.btnResetPath.setOnClickListener(v ->
+            binding.inputTermuxPath.setText(AppSettings.DEFAULT_TERMUX_PATH));
 
-        binding.btnReset.setOnClickListener(v -> {
+        binding.btnReset.setOnClickListener(v ->
             new AlertDialog.Builder(this)
                 .setTitle("Reset Semua Pengaturan?")
                 .setMessage("Semua pengaturan akan dikembalikan ke default.")
@@ -77,11 +77,9 @@ public class SettingsActivity extends AppCompatActivity {
                     Toast.makeText(this, "Pengaturan direset", Toast.LENGTH_SHORT).show();
                 })
                 .setNegativeButton("Batal", null)
-                .show();
-        });
+                .show());
 
         binding.rgFontSize.setOnCheckedChangeListener((group, checkedId) -> updateFontPreview());
-
         binding.switchTheme.setOnCheckedChangeListener((btn, isChecked) -> updateThemeLabel());
     }
 
@@ -91,33 +89,35 @@ public class SettingsActivity extends AppCompatActivity {
             binding.inputTermuxPath.setError("Path tidak boleh kosong");
             return;
         }
-        settings.setTermuxPath(path);
 
-        String shell = binding.spinnerShell.getSelectedItem().toString();
-        settings.setDefaultShell(shell);
+        boolean wasLightTheme = settings.isLightTheme();
+
+        settings.setTermuxPath(path);
+        settings.setDefaultShell(binding.spinnerShell.getSelectedItem().toString());
 
         int checkedId = binding.rgFontSize.getCheckedRadioButtonId();
-        if (checkedId == binding.rbFontSmall.getId())       settings.setFontSize(AppSettings.FONT_SMALL);
-        else if (checkedId == binding.rbFontLarge.getId())  settings.setFontSize(AppSettings.FONT_LARGE);
-        else                                                 settings.setFontSize(AppSettings.FONT_MEDIUM);
+        if (checkedId == binding.rbFontSmall.getId())      settings.setFontSize(AppSettings.FONT_SMALL);
+        else if (checkedId == binding.rbFontLarge.getId()) settings.setFontSize(AppSettings.FONT_LARGE);
+        else                                               settings.setFontSize(AppSettings.FONT_MEDIUM);
 
-        settings.setTheme(binding.switchTheme.isChecked() ? AppSettings.THEME_LIGHT : AppSettings.THEME_DARK);
+        boolean wantsLight = binding.switchTheme.isChecked();
+        settings.setTheme(wantsLight ? AppSettings.THEME_LIGHT : AppSettings.THEME_DARK);
         settings.setShowExitCode(binding.switchShowExit.isChecked());
         settings.setFilterStderr(binding.switchFilterStderr.isChecked());
 
         Toast.makeText(this, "✅ Pengaturan disimpan!", Toast.LENGTH_SHORT).show();
 
-        if (binding.switchTheme.isChecked() != settings.isLightTheme()) {
+        if (wantsLight != wasLightTheme) {
             recreate();
         }
     }
 
     private void updateFontPreview() {
-        float sp;
         int checkedId = binding.rgFontSize.getCheckedRadioButtonId();
-        if (checkedId == binding.rbFontSmall.getId())       sp = 11f;
-        else if (checkedId == binding.rbFontLarge.getId())  sp = 15f;
-        else                                                sp = 13f;
+        float sp;
+        if (checkedId == binding.rbFontSmall.getId())      sp = AppSettings.FONT_SIZE_SMALL_SP;
+        else if (checkedId == binding.rbFontLarge.getId()) sp = AppSettings.FONT_SIZE_LARGE_SP;
+        else                                               sp = AppSettings.FONT_SIZE_MEDIUM_SP;
 
         binding.fontPreview.setTextSize(sp);
         binding.fontPreview.setText("Preview: $ pkg install wget\nFetching package list... Done\n✓ selesai (3s)");

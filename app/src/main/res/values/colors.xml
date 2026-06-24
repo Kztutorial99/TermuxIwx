@@ -14,4 +14,7 @@
     <color name="console_bg">#010409</color>
     <color name="console_text">#00FF41</color>
     <color name="border_color">#30363D</color>
+    <color name="color_database">#58A6FF</color>
+    <color name="color_editor">#BC8CFF</color>
+    <color name="color_media">#FF7B72</color>
 </resources>

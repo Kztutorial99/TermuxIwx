@@ -9,9 +9,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.text.SpannableString;
-import android.text.Spanned;
-import android.text.style.ForegroundColorSpan;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.Toast;
@@ -24,13 +21,21 @@ import com.kztutorial.termuxiwx.databinding.ActivityConsoleBinding;
 import com.kztutorial.termuxiwx.utils.AppSettings;
 import com.kztutorial.termuxiwx.utils.TermuxConnector;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class ConsoleActivity extends AppCompatActivity {
 
     private static final String ACTION_RESULT = "com.kztutorial.termuxiwx.CONSOLE_RESULT";
+    private static final int MAX_HISTORY = 50;
+
     private ActivityConsoleBinding binding;
+    private AppSettings settings;
     private final StringBuilder outputBuffer = new StringBuilder();
     private boolean isRunning = false;
     private String lastCommand = "";
+    private final List<String> commandHistory = new ArrayList<>();
+    private int historyIndex = -1;
     private final Handler timerHandler = new Handler(Looper.getMainLooper());
     private long startTime = 0;
 
@@ -52,7 +57,7 @@ public class ConsoleActivity extends AppCompatActivity {
             Bundle resultBundle = extras != null ? extras.getBundle("result") : null;
             String stdout = resultBundle != null ? resultBundle.getString("stdout", "") : "";
             String stderr = resultBundle != null ? resultBundle.getString("stderr", "") : "";
-            int exitCode = resultBundle != null ? resultBundle.getInt("exitCode", -1) : -1;
+            int exitCode  = resultBundle != null ? resultBundle.getInt("exitCode", -1) : -1;
             runOnUiThread(() -> appendOutput(stdout, stderr, exitCode));
         }
     };
@@ -67,7 +72,7 @@ public class ConsoleActivity extends AppCompatActivity {
         if (getSupportActionBar() != null) getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         setTitle("Console");
 
-        AppSettings settings = new AppSettings(this);
+        settings = new AppSettings(this);
         binding.consoleOutput.setTextSize(settings.getFontSizeSp());
 
         outputBuffer.append("TermuxIwx Console v1.0\n");
@@ -84,13 +89,16 @@ public class ConsoleActivity extends AppCompatActivity {
         });
 
         binding.btnRun.setOnClickListener(v -> runCommand());
+
         binding.btnClear.setOnClickListener(v -> {
             outputBuffer.setLength(0);
             outputBuffer.append("Console cleared.\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
             binding.consoleOutput.setText(outputBuffer.toString());
         });
 
-        // Quick command chips
+        binding.btnHistoryUp.setOnClickListener(v -> navigateHistory(-1));
+        binding.btnHistoryDown.setOnClickListener(v -> navigateHistory(1));
+
         binding.chipLs.setOnClickListener(v -> { binding.cmdInput.setText("ls"); runCommand(); });
         binding.chipPkgUpdate.setOnClickListener(v -> { binding.cmdInput.setText("pkg update"); runCommand(); });
         binding.chipPwd.setOnClickListener(v -> { binding.cmdInput.setText("pwd"); runCommand(); });
@@ -105,6 +113,17 @@ public class ConsoleActivity extends AppCompatActivity {
         }
     }
 
+    private void navigateHistory(int direction) {
+        if (commandHistory.isEmpty()) return;
+        historyIndex = Math.max(-1, Math.min(commandHistory.size() - 1, historyIndex + direction));
+        if (historyIndex >= 0) {
+            binding.cmdInput.setText(commandHistory.get(commandHistory.size() - 1 - historyIndex));
+            binding.cmdInput.setSelection(binding.cmdInput.getText().length());
+        } else {
+            binding.cmdInput.setText("");
+        }
+    }
+
     private void runCommand() {
         String cmd = binding.cmdInput.getText().toString().trim();
         if (cmd.isEmpty()) return;
@@ -113,22 +132,27 @@ public class ConsoleActivity extends AppCompatActivity {
             return;
         }
 
+        if (commandHistory.isEmpty() || !commandHistory.get(commandHistory.size() - 1).equals(cmd)) {
+            commandHistory.add(cmd);
+            if (commandHistory.size() > MAX_HISTORY) commandHistory.remove(0);
+        }
+        historyIndex = -1;
+
         lastCommand = cmd;
         isRunning = true;
 
-        // Tampilkan prompt + command di buffer (TANPA trailing $ di sini)
         outputBuffer.append("\n$ ").append(cmd).append("\n");
         binding.consoleOutput.setText(outputBuffer.toString());
         binding.cmdInput.setText("");
 
-        // Disable input saat berjalan
         binding.cmdInput.setEnabled(false);
         binding.btnRun.setEnabled(false);
+        binding.btnHistoryUp.setEnabled(false);
+        binding.btnHistoryDown.setEnabled(false);
         binding.progressBar.setVisibility(View.VISIBLE);
         binding.runningStatus.setVisibility(View.VISIBLE);
         binding.runningStatus.setText("⏳ Menjalankan...");
 
-        // Mulai timer
         startTime = System.currentTimeMillis();
         timerHandler.post(timerRunnable);
 
@@ -137,55 +161,52 @@ public class ConsoleActivity extends AppCompatActivity {
     }
 
     private void appendOutput(String stdout, String stderr, int exitCode) {
-        // Stop timer & re-enable input
         timerHandler.removeCallbacks(timerRunnable);
         isRunning = false;
         binding.progressBar.setVisibility(View.GONE);
         binding.runningStatus.setVisibility(View.GONE);
         binding.cmdInput.setEnabled(true);
         binding.btnRun.setEnabled(true);
+        binding.btnHistoryUp.setEnabled(true);
+        binding.btnHistoryDown.setEnabled(true);
 
         long elapsed = (System.currentTimeMillis() - startTime) / 1000;
 
-        // Tulis stdout
         if (!stdout.isEmpty()) {
             outputBuffer.append(stdout);
             if (!stdout.endsWith("\n")) outputBuffer.append("\n");
         }
 
-        // Filter & tulis stderr (buang noise APT warning yang berulang)
-        String filteredStderr = filterStderr(stderr);
-        if (!filteredStderr.isEmpty()) {
-            outputBuffer.append("[!] ").append(filteredStderr);
-            if (!filteredStderr.endsWith("\n")) outputBuffer.append("\n");
+        boolean doFilter = settings.isFilterStderr();
+        String stderrOutput = doFilter ? filterStderr(stderr) : stderr;
+        if (stderrOutput != null && !stderrOutput.trim().isEmpty()) {
+            outputBuffer.append("[!] ").append(stderrOutput.trim());
+            if (!stderrOutput.endsWith("\n")) outputBuffer.append("\n");
         }
 
-        // Exit code — tampilkan hanya jika error
-        if (exitCode == 0) {
-            outputBuffer.append("✓ selesai (").append(elapsed).append("s)\n");
-        } else {
-            outputBuffer.append("✗ exit: ").append(exitCode).append(" (").append(elapsed).append("s)\n");
+        boolean showExit = settings.isShowExitCode();
+        if (showExit) {
+            if (exitCode == 0) {
+                outputBuffer.append("✓ selesai (").append(elapsed).append("s)\n");
+            } else {
+                outputBuffer.append("✗ exit: ").append(exitCode).append(" (").append(elapsed).append("s)\n");
+            }
         }
 
         binding.consoleOutput.setText(outputBuffer.toString());
         scrollToBottom();
 
-        // Deteksi command not found & tawarkan install
         detectAndSuggestInstall(stdout, stderr, exitCode);
-
-        // Re-enable input field
         binding.cmdInput.requestFocus();
     }
 
     private String filterStderr(String stderr) {
         if (stderr == null || stderr.trim().isEmpty()) return "";
-
         String[] noisePatterns = {
             "WARNING: apt does not have a stable CLI interface",
             "Use with caution in scripts",
             "debconf: delaying package configuration",
         };
-
         StringBuilder filtered = new StringBuilder();
         for (String line : stderr.split("\n")) {
             String trimmed = line.trim();
@@ -194,30 +215,22 @@ public class ConsoleActivity extends AppCompatActivity {
             for (String noise : noisePatterns) {
                 if (trimmed.contains(noise)) { isNoise = true; break; }
             }
-            if (!isNoise) {
-                filtered.append(trimmed).append("\n");
-            }
+            if (!isNoise) filtered.append(trimmed).append("\n");
         }
         return filtered.toString().trim();
     }
 
     private void detectAndSuggestInstall(String stdout, String stderr, int exitCode) {
         if (exitCode == 0) return;
-
         String combined = (stdout + " " + stderr).toLowerCase();
         boolean isNotFound = combined.contains("not found")
             || combined.contains("no such file or directory")
             || combined.contains("command not found")
             || combined.contains("is not installed");
-
         if (!isNotFound) return;
 
-        // Coba extract nama package dari command yang diketik
         String baseCmd = lastCommand.trim().split("\\s+")[0];
-        // Strip path if any
         if (baseCmd.contains("/")) baseCmd = baseCmd.substring(baseCmd.lastIndexOf('/') + 1);
-
-        // Beberapa mapping command → package name
         String pkgName = mapCommandToPackage(baseCmd);
 
         String finalPkgName = pkgName;
@@ -253,8 +266,7 @@ public class ConsoleActivity extends AppCompatActivity {
             case "nano": return "nano";
             case "htop": return "htop";
             case "ping": return "inetutils";
-            case "netstat": return "net-tools";
-            case "ifconfig": return "net-tools";
+            case "netstat": case "ifconfig": return "net-tools";
             case "ip": return "iproute2";
             case "java": return "openjdk-17";
             case "zsh": return "zsh";
@@ -268,8 +280,7 @@ public class ConsoleActivity extends AppCompatActivity {
     }
 
     private void scrollToBottom() {
-        binding.consoleScroll.post(() ->
-            binding.consoleScroll.fullScroll(View.FOCUS_DOWN));
+        binding.consoleScroll.post(() -> binding.consoleScroll.fullScroll(View.FOCUS_DOWN));
     }
 
     private PendingIntent buildPendingIntent() {

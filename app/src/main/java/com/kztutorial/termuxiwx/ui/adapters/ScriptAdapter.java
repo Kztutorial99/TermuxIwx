@@ -39,17 +39,21 @@ public class ScriptAdapter extends RecyclerView.Adapter<ScriptAdapter.ViewHolder
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         ScriptItem item = items.get(position);
-        holder.name.setText(item.name);
-        holder.description.setText(item.description);
-        holder.category.setText(item.category);
+        holder.name.setText(item.getName());
+        holder.description.setText(item.getDescription());
+        holder.category.setText(item.getCategory());
 
         int catColor;
-        switch (item.category) {
-            case "Security": catColor = R.color.error_color; break;
-            case "Dev": catColor = R.color.colorPrimary; break;
-            case "Network": catColor = R.color.warning_color; break;
-            case "Shell": catColor = R.color.colorAccent; break;
-            default: catColor = R.color.text_secondary; break;
+        switch (item.getCategory()) {
+            case "Security": catColor = R.color.error_color;    break;
+            case "Dev":      catColor = R.color.colorPrimary;   break;
+            case "Network":  catColor = R.color.warning_color;  break;
+            case "Shell":    catColor = R.color.colorAccent;    break;
+            case "Database": catColor = R.color.color_database; break;
+            case "Editor":   catColor = R.color.color_editor;   break;
+            case "Media":    catColor = R.color.color_media;    break;
+            case "Termux":   catColor = R.color.success_color;  break;
+            default:         catColor = R.color.text_secondary; break;
         }
         holder.category.setTextColor(holder.category.getContext().getColor(catColor));
         holder.card.setOnClickListener(v -> listener.onItemClick(item));

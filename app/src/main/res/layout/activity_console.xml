@@ -97,6 +97,24 @@
                 android:singleLine="true" />
 
             <ImageButton
+                android:id="@+id/btn_history_up"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@android:drawable/arrow_up_float"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:tint="@color/text_secondary"
+                android:contentDescription="History Up" />
+
+            <ImageButton
+                android:id="@+id/btn_history_down"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@android:drawable/arrow_down_float"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:tint="@color/text_secondary"
+                android:contentDescription="History Down" />
+
+            <ImageButton
                 android:id="@+id/btn_clear"
                 android:layout_width="32dp"
                 android:layout_height="32dp"
