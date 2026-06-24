@@ -5,6 +5,51 @@ Format: `[Versi] — Tanggal — Deskripsi`
 
 ---
 
+## [1.6.0] — 2025-06-24 — Modernisasi UX/UI & Audit Menyeluruh
+
+### Diperbaiki — Bug Kritis (P1)
+- **Filter chip Database/Editor/Media di ScriptRepo tidak ada** — 9 tools (mariadb, postgresql, redis, vim, neovim, ffmpeg, imagemagick) tidak bisa difilter sama sekali. Fix: tambah chip XML + binding + logic di `setupCategoryChips()` dan `getCurrentCategory()`
+- **Silent failure saat hapus package gagal** — `handleResult(ACTION_REMOVE)` tidak punya branch `else` saat exitCode != 0. Fix: tampilkan Snackbar error
+- **Tema tidak apply saat app dibuka ulang** — `recreate()` di SettingsActivity hanya berlaku untuk sesi itu. Fix: buat `TermuxIwxApp extends Application` yang panggil `AppCompatDelegate.setDefaultNightMode()` saat startup
+
+### Ditambahkan — Fitur Baru (P1/P2)
+- **`apt purge`** di PackageDetailActivity — tombol "Hapus + Bersihkan Config (purge)" muncul saat package terinstall; hapus package beserta semua config file-nya via `apt purge -y`
+- **`TermuxConnector.aptPurge()`** — method baru untuk jalankan `apt purge -y <package>`
+- **`TermuxIwxApp.java`** — Application class baru, atur tema global lewat `AppCompatDelegate` sebelum activity manapun terbuka
+
+### Modernisasi UX (P2)
+- **`DiffUtil` di PackageAdapter** — ganti `notifyDataSetChanged()` dengan `DiffUtil.calculateDiff()`: animasi add/remove/move yang halus, tidak re-render seluruh list
+- **`DiffUtil` di ScriptAdapter** — sama seperti PackageAdapter; filter kategori kini animasi smooth
+- **Deskripsi package tampil di list** — `item_package.xml` kini punya `pkg_desc` TextView, ditampilkan kalau ada deskripsi dari `apt search`
+- **Search debounce 500ms di MainActivity** — `Handler.postDelayed(searchRunnable, 500ms)` mencegah `apt search` dipanggil tiap keystroke; pencarian hanya jalan setelah user berhenti mengetik
+- **Status card Termux OK auto-dismiss** — kartu hijau "Termux terdeteksi ✓" otomatis hilang setelah 3 detik; tidak lagi memotong area layar permanen
+- **About dialog versi benar** — "v1.0" diperbaiki ke "v1.5.0" + tambah warning Termux Play Store
+
+### Upgrade Komponen (P2/P3)
+- **Toast → Snackbar** di semua Activity (MainActivity, ConsoleActivity, PackageDetailActivity, ScriptRepoActivity) — sesuai Material Design 3 guideline
+- **`onBackPressed()` deprecated → `OnBackPressedCallback`** di ConsoleActivity, PackageDetailActivity, ScriptRepoActivity — ganti ke `getOnBackPressedDispatcher().addCallback()`
+- **`item_package.xml`** — upgrade dari `CardView` lama ke `MaterialCardView` dengan `strokeColor` border dan `cardCornerRadius` 10dp
+- **`activity_package_detail.xml`** — upgrade semua `CardView` ke `MaterialCardView` dengan stroke border
+- **`pkg_version` di list** — warna diubah dari abu-abu ke `colorPrimary` (hijau) + `fontFamily=monospace` agar lebih readable
+
+### File Baru
+- `TermuxIwxApp.java`
+
+### File Diubah
+- `AndroidManifest.xml` — tambah `android:name=".TermuxIwxApp"`
+- `TermuxConnector.java` — tambah `aptPurge()`, hapus dead code `listScripts()` & `runScript()`
+- `MainActivity.java` — debounce search, auto-dismiss status card, fix versi About, Snackbar
+- `ConsoleActivity.java` — `OnBackPressedCallback`, Snackbar, versi Console "v1.5"
+- `PackageDetailActivity.java` — purge button, error Snackbar, `OnBackPressedCallback`
+- `ScriptRepoActivity.java` — chip Database/Editor/Media, Snackbar, `OnBackPressedCallback`, DiffUtil
+- `PackageAdapter.java` — DiffUtil, tampilkan deskripsi, `MaterialCardView`
+- `ScriptAdapter.java` — DiffUtil
+- `activity_script_repo.xml` — tambah chip_database, chip_editor, chip_media
+- `item_package.xml` — `MaterialCardView`, stroke border, field `pkg_desc`, warna versi
+- `activity_package_detail.xml` — `MaterialCardView`, tombol `btn_purge`
+
+---
+
 ## [1.5.0] — 2025-06-24 — Bug Fix Besar (Audit P1–P3)
 
 ### Diperbaiki — Bug Kritis (P1)
