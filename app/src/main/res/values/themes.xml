@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.TermuxIwx" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+        <item name="android:windowBackground">@color/bg_dark</item>
+        <item name="android:statusBarColor">@color/surface_dark</item>
+        <item name="android:navigationBarColor">@color/surface_dark</item>
+        <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.TermuxIwx.Dialog</item>
+    </style>
+
+    <style name="ThemeOverlay.TermuxIwx.Dialog" parent="ThemeOverlay.MaterialComponents.MaterialAlertDialog">
+        <item name="android:background">@color/surface_dark</item>
+        <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+        <item name="buttonBarPositiveButtonStyle">@style/Widget.TermuxIwx.Button</item>
+        <item name="buttonBarNegativeButtonStyle">@style/Widget.TermuxIwx.Button.Outlined</item>
+    </style>
+
+    <style name="Widget.TermuxIwx.Button" parent="Widget.MaterialComponents.Button">
+        <item name="backgroundTint">@color/colorPrimary</item>
+    </style>
+
+    <style name="Widget.TermuxIwx.Button.Outlined" parent="Widget.MaterialComponents.Button.OutlinedButton">
+        <item name="strokeColor">@color/border_color</item>
+        <item name="android:textColor">@color/text_secondary</item>
+    </style>
+</resources>
