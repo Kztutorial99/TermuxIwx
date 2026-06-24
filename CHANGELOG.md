@@ -5,6 +5,47 @@ Format: `[Versi] — Tanggal — Deskripsi`
 
 ---
 
+## [1.5.0] — 2025-06-24 — Bug Fix Besar (Audit P1–P3)
+
+### Diperbaiki — Bug Kritis (P1)
+- **Tab Installed selalu kosong** — `handleResult()` sebelumnya pakai `parseFromAptSearch()` untuk output `dpkg -l` yang format-nya beda total. Fix: tambah method `Package.parseFromDpkg()` yang parse format `ii name version arch desc` dengan benar
+- **Settings "Termux Path" tidak efek** — `TermuxConnector` sebelumnya hardcode semua path binary. Fix: semua method kini pakai `AppSettings.getTermuxPath()` secara dinamis via helper `getBinPath(context)` dan `getShell(context)`
+- **Ganti tema tidak apply** — bug logika di `SettingsActivity.saveSettings()`: `settings.isLightTheme()` dipanggil setelah tema disimpan sehingga kondisi selalu false dan `recreate()` tidak pernah jalan. Fix: simpan nilai tema lama sebelum `setTheme()`, bandingkan setelahnya
+- **Storage Info di-parse sebagai package** — menu Storage Info kirim hasil ke `handleResult()` yang mencoba parse `df -h` sebagai daftar package. Fix: tambah state `CMD_STORAGE` yang tampilkan hasil di AlertDialog
+
+### Diperbaiki — Dead Code & Setting Tidak Aktif (P2)
+- **`isFilterStderr` tidak dipakai** — `ConsoleActivity` selalu filter stderr tanpa cek preferensi user. Fix: cek `settings.isFilterStderr()` sebelum filter
+- **`isShowExitCode` tidak dipakai** — exit code selalu ditampilkan. Fix: cek `settings.isShowExitCode()` sebelum append status akhir
+- **Permission `RECEIVE_BOOT_COMPLETED` tidak terpakai** — dihapus dari `AndroidManifest.xml`
+- **`CMD_UPGRADE` tidak punya state** — upgrade sebelumnya tidak punya `currentCommand` sendiri sehingga hasil upgrade mencoba di-parse sebagai package. Fix: tambah `CMD_UPGRADE = 4`
+
+### Ditambahkan — Fitur Baru (P3)
+- **Command History di Console** — tombol ▲ (naik) dan ▼ (turun) untuk scroll riwayat perintah sebelumnya (max 50 entry). Duplikat berurutan tidak disimpan
+- **Warna kategori lengkap di ScriptAdapter** — Database (biru `#58A6FF`), Editor (ungu `#BC8CFF`), Media (merah muda `#FF7B72`), Termux (hijau `success_color`) kini punya warna berbeda — sebelumnya semua fallback ke abu-abu
+- **Fix typo install vim** — perintah install vim yang salah (`lvim`) diperbaiki ke `vim`
+
+### Refactor
+- **`ScriptItem`** — field diubah dari `public` ke `private` dengan getters proper (`getName()`, `getDescription()`, `getInstallCmd()`, `getCategory()`, `getTestCmd()`)
+- **`AppSettings`** — konstanta `FONT_SIZE_SMALL_SP`, `FONT_SIZE_MEDIUM_SP`, `FONT_SIZE_LARGE_SP` ditambahkan agar tidak ada magic number duplikat
+- **`Package.parseFromAptSearch()`** — diperbaiki untuk juga ekstrak deskripsi dari output `apt search`
+- **`MainActivity` tab Scripts/Console** — setelah launch Activity, tab otomatis kembali ke posisi Search agar state visual tidak out-of-sync saat user kembali
+
+### File Diubah
+- `AndroidManifest.xml`
+- `Package.java`
+- `ScriptItem.java`
+- `AppSettings.java`
+- `TermuxConnector.java`
+- `MainActivity.java`
+- `ConsoleActivity.java`
+- `SettingsActivity.java`
+- `ScriptRepoActivity.java`
+- `ScriptAdapter.java`
+- `activity_console.xml`
+- `colors.xml`
+
+---
+
 ## [1.4.0] — 2025-06-24 — Settings Screen
 
 ### Ditambahkan
