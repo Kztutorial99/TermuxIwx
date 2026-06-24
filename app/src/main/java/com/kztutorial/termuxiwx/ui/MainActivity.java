@@ -23,6 +23,7 @@ import com.kztutorial.termuxiwx.R;
 import com.kztutorial.termuxiwx.databinding.ActivityMainBinding;
 import com.kztutorial.termuxiwx.models.Package;
 import com.kztutorial.termuxiwx.ui.adapters.PackageAdapter;
+import com.kztutorial.termuxiwx.ui.ScriptRepoActivity;
 import com.kztutorial.termuxiwx.utils.CommandResultReceiver;
 import com.kztutorial.termuxiwx.utils.TermuxConnector;
 
@@ -119,7 +120,7 @@ public class MainActivity extends AppCompatActivity {
                         break;
                     case 2:
                         binding.searchLayout.setVisibility(View.GONE);
-                        loadScripts();
+                        startActivity(new Intent(MainActivity.this, ScriptRepoActivity.class));
                         break;
                     case 3:
                         startActivity(new Intent(MainActivity.this, ConsoleActivity.class));
