@@ -1,0 +1,5 @@
+-keep class com.kztutorial.termuxiwx.** { *; }
+-keepattributes *Annotation*
+-keepattributes SourceFile,LineNumberTable
+-dontwarn com.google.android.material.**
+-keep class com.google.android.material.** { *; }
