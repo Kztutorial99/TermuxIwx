@@ -3,14 +3,14 @@ name: Build TermuxIwx APK
 on:
   push:
     branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
   workflow_dispatch:
 
 jobs:
   build:
-    name: Build Debug & Release APK
+    name: Build & Release APK
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout code
@@ -45,27 +45,51 @@ jobs:
       - name: Build Release APK (unsigned)
         run: ./gradlew assembleRelease --stacktrace
 
-      - name: Upload Debug APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: TermuxIwx-debug-${{ github.run_number }}
-          path: app/build/outputs/apk/debug/*.apk
-          retention-days: 30
+      - name: Rename APKs
+        run: |
+          mv app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/TermuxIwx-debug.apk
+          mv app/build/outputs/apk/release/app-release-unsigned.apk app/build/outputs/apk/release/TermuxIwx-release-unsigned.apk
 
-      - name: Upload Release APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: TermuxIwx-release-${{ github.run_number }}
-          path: app/build/outputs/apk/release/*.apk
-          retention-days: 30
+      - name: Get short SHA
+        id: sha
+        run: echo "short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
-      - name: Create GitHub Release (on tag)
-        if: startsWith(github.ref, 'refs/tags/v')
+      - name: Delete existing latest release (if any)
+        run: |
+          gh release delete latest --yes 2>/dev/null || true
+          git push origin :refs/tags/latest 2>/dev/null || true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GitHub Release with APK
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: latest
+          name: "TermuxIwx - Build Terbaru"
+          body: |
+            ## TermuxIwx APK - Build Otomatis
+
+            **Commit:** ${{ steps.sha.outputs.short }}
+            **Build:** #${{ github.run_number }}
+
+            ### Download
+            - **TermuxIwx-debug.apk** — Langsung install (debug, tidak perlu sign)
+            - **TermuxIwx-release-unsigned.apk** — Release build (perlu sign sebelum install)
+
+            ### Setup Termux sebelum pakai:
+            ```bash
+            echo "allow-external-apps=true" >> ~/.termux/termux.properties
+            ```
+            Restart Termux setelah itu.
+
+            ### Cara Install APK:
+            1. Download **TermuxIwx-debug.apk**
+            2. Buka di HP → Install
+            3. Buka TermuxIwx → langsung bisa pakai!
           files: |
-            app/build/outputs/apk/debug/*.apk
-            app/build/outputs/apk/release/*.apk
-          generate_release_notes: true
+            app/build/outputs/apk/debug/TermuxIwx-debug.apk
+            app/build/outputs/apk/release/TermuxIwx-release-unsigned.apk
+          prerelease: false
+          make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
