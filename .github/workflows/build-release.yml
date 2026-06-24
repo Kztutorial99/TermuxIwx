@@ -14,10 +14,15 @@ jobs:
   build:
     name: Build Debug APK
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: ⬇️ Checkout repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: true
 
       - name: ☕ Set up JDK 17
         uses: actions/setup-java@v4
@@ -36,19 +41,18 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
+          restore-keys: ${{ runner.os }}-gradle-
 
       - name: 🔨 Build Debug APK
         run: ./gradlew assembleDebug --no-daemon
         env:
-          GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=false"
+          GRADLE_OPTS: "-Dorg.gradle.daemon=false"
 
       - name: 📋 Get version info
         id: version
         run: |
           VERSION_NAME=$(grep 'versionName' app/build.gradle | grep -oP '"\K[^"]+')
-          VERSION_CODE=$(grep 'versionCode' app/build.gradle | grep -oP '\d+')
+          VERSION_CODE=$(grep 'versionCode' app/build.gradle | grep -oP '\d+' | head -1)
           echo "version_name=v${VERSION_NAME}" >> $GITHUB_OUTPUT
           echo "version_code=${VERSION_CODE}" >> $GITHUB_OUTPUT
           echo "📦 Version: v${VERSION_NAME} (code: ${VERSION_CODE})"
@@ -57,7 +61,8 @@ jobs:
         run: |
           mkdir -p artifacts
           cp app/build/outputs/apk/debug/app-debug.apk \
-             artifacts/TermuxIwx-${{ steps.version.outputs.version_name }}.apk
+             "artifacts/TermuxIwx-${{ steps.version.outputs.version_name }}.apk"
+          ls -lh artifacts/
 
       - name: 📤 Upload APK artifact
         uses: actions/upload-artifact@v4
@@ -66,22 +71,15 @@ jobs:
           path: artifacts/*.apk
           retention-days: 30
 
-      - name: 🏷️ Delete existing release/tag (jika ada)
+      - name: 🏷️ Setup git & create tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          TAG="${{ steps.version.outputs.version_name }}"
+          git tag -f "$TAG" -m "Release $TAG"
+          git push origin "$TAG" --force
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          TAG="${{ steps.version.outputs.version_name }}"
-          # Hapus release lama kalau ada
-          RELEASE_ID=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
-            "https://api.github.com/repos/${{ github.repository }}/releases/tags/$TAG" \
-            | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('id',''))" 2>/dev/null || true)
-          if [ -n "$RELEASE_ID" ] && [ "$RELEASE_ID" != "None" ]; then
-            curl -s -X DELETE -H "Authorization: token $GITHUB_TOKEN" \
-              "https://api.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID"
-            echo "🗑️ Old release deleted: $RELEASE_ID"
-          fi
-          # Hapus tag lama kalau ada
-          git push --delete origin "$TAG" 2>/dev/null || true
 
       - name: 🚀 Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -90,31 +88,28 @@ jobs:
           name: "TermuxIwx ${{ steps.version.outputs.version_name }}"
           draft: false
           prerelease: false
+          make_latest: true
           files: artifacts/TermuxIwx-${{ steps.version.outputs.version_name }}.apk
           body: |
             ## 📦 TermuxIwx ${{ steps.version.outputs.version_name }}
 
-            ${{ github.event.inputs.release_notes || 'Auto-release dari GitHub Actions' }}
+            ${{ github.event.inputs.release_notes || 'Auto-release dari GitHub Actions 🤖' }}
 
             ---
 
-            ### ✨ Perubahan di versi ini
-            - ✅ Sistem **auto-update otomatis** — app notif kalau ada versi baru
-            - ✅ Fix **apt search parsing** multiline (deskripsi package sekarang muncul)
-            - ✅ Fix **Light Mode** dengan DayNight theming yang benar
-            - ✅ Fix **tab navigation** — tidak ada lagi flash/snap ke tab 0
-            - ✅ Fix **BroadcastReceiver lifecycle** (onStart/onStop)
-            - ✅ Console output dibatasi 500 baris (anti OOM)
-            - ✅ Semua CardView → MaterialCardView
-            - ✅ Spinner → Material ExposedDropdownMenu
-            - ✅ minifyEnabled + shrinkResources untuk release APK lebih kecil
-
-            ---
+            ### ✨ Yang Baru
+            - 🔔 **Auto-update otomatis** — app notifikasi kalau ada versi baru & bisa download langsung
+            - 🛠 Fix apt search parsing (deskripsi package tampil)
+            - 🎨 Light/Dark mode (DayNight theming)
+            - 🗂 Tab navigation fix (tidak ada flash)
+            - 🖥 Console output limit 500 baris (anti OOM)
+            - 📦 MaterialCardView consistency
+            - 🔽 Spinner → Material ExposedDropdownMenu
 
             ### 📲 Cara Install
-            1. Download APK di bawah
-            2. Buka file APK di Android
-            3. Tap **Install** (aktifkan "Sumber tidak dikenal" jika diminta)
+            1. Download **TermuxIwx-${{ steps.version.outputs.version_name }}.apk** di bawah
+            2. Buka di Android → tap Install
+            3. Aktifkan *Sumber tidak dikenal* jika diminta
 
             ### ⚠️ Syarat
             - Termux dari **F-Droid** (bukan Play Store)
