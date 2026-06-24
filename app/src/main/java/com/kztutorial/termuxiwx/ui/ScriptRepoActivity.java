@@ -43,9 +43,11 @@ public class ScriptRepoActivity extends AppCompatActivity {
             runOnUiThread(() -> {
                 String name = pendingInstall != null ? pendingInstall.getName() : "Tool";
                 if (exitCode == 0) {
-                    Snackbar.make(binding.getRoot(), "✅ " + name + " berhasil diinstall!", Snackbar.LENGTH_SHORT).show();
+                    Snackbar.make(binding.getRoot(), "\u2705 " + name + " berhasil diinstall!", Snackbar.LENGTH_SHORT).show();
                 } else {
-                    Snackbar.make(binding.getRoot(), "❌ Gagal install " + name + ". Cek Console.", Snackbar.LENGTH_LONG).show();
+                    Snackbar.make(binding.getRoot(), "\u274c Gagal install " + name + ". Cek Console.", Snackbar.LENGTH_LONG)
+                        .setAction("Buka Console", v -> startActivity(new Intent(ScriptRepoActivity.this, ConsoleActivity.class)))
+                        .show();
                 }
                 pendingInstall = null;
             });
@@ -126,14 +128,14 @@ public class ScriptRepoActivity extends AppCompatActivity {
 
     private void showInstallDialog(ScriptItem item) {
         new AlertDialog.Builder(this)
-            .setTitle("📦 " + item.getName())
+            .setTitle("\ud83d\udce6 " + item.getName())
             .setMessage(item.getDescription() + "\n\nPerintah install:\n" + item.getInstallCmd())
-            .setPositiveButton("⚡ Install", (d, w) -> {
+            .setPositiveButton("\u26a1 Install", (d, w) -> {
                 pendingInstall = item;
                 TermuxConnector.customCommand(this, item.getInstallCmd(), buildPendingIntent());
                 Snackbar.make(binding.getRoot(), "Menginstall " + item.getName() + "...", Snackbar.LENGTH_SHORT).show();
             })
-            .setNeutralButton("🖥 Buka Console", (d, w) -> {
+            .setNeutralButton("\ud83d\udda5 Buka Console", (d, w) -> {
                 Intent console = new Intent(this, ConsoleActivity.class);
                 console.putExtra("initial_cmd", item.getInstallCmd());
                 startActivity(console);
@@ -205,8 +207,8 @@ public class ScriptRepoActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onResume() {
-        super.onResume();
+    protected void onStart() {
+        super.onStart();
         IntentFilter filter = new IntentFilter(ACTION_RESULT);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(resultReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
@@ -216,8 +218,8 @@ public class ScriptRepoActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onPause() {
-        super.onPause();
+    protected void onStop() {
+        super.onStop();
         try { unregisterReceiver(resultReceiver); } catch (Exception ignored) {}
     }
 

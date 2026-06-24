@@ -6,6 +6,7 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 
 import com.kztutorial.termuxiwx.databinding.ActivitySettingsBinding;
 import com.kztutorial.termuxiwx.utils.AppSettings;
@@ -39,13 +40,7 @@ public class SettingsActivity extends AppCompatActivity {
         ArrayAdapter<String> shellAdapter = new ArrayAdapter<>(this,
                 android.R.layout.simple_dropdown_item_1line, shells);
         binding.spinnerShell.setAdapter(shellAdapter);
-        String currentShell = settings.getDefaultShell();
-        for (int i = 0; i < shells.length; i++) {
-            if (shells[i].equals(currentShell)) {
-                binding.spinnerShell.setSelection(i);
-                break;
-            }
-        }
+        binding.spinnerShell.setText(settings.getDefaultShell(), false);
 
         switch (settings.getFontSize()) {
             case AppSettings.FONT_SMALL: binding.rgFontSize.check(binding.rbFontSmall.getId()); break;
@@ -93,7 +88,7 @@ public class SettingsActivity extends AppCompatActivity {
         boolean wasLightTheme = settings.isLightTheme();
 
         settings.setTermuxPath(path);
-        settings.setDefaultShell(binding.spinnerShell.getSelectedItem().toString());
+        settings.setDefaultShell(binding.spinnerShell.getText().toString());
 
         int checkedId = binding.rgFontSize.getCheckedRadioButtonId();
         if (checkedId == binding.rbFontSmall.getId())      settings.setFontSize(AppSettings.FONT_SMALL);
@@ -105,10 +100,12 @@ public class SettingsActivity extends AppCompatActivity {
         settings.setShowExitCode(binding.switchShowExit.isChecked());
         settings.setFilterStderr(binding.switchFilterStderr.isChecked());
 
-        Toast.makeText(this, "✅ Pengaturan disimpan!", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "\u2705 Pengaturan disimpan!", Toast.LENGTH_SHORT).show();
 
         if (wantsLight != wasLightTheme) {
-            recreate();
+            AppCompatDelegate.setDefaultNightMode(
+                wantsLight ? AppCompatDelegate.MODE_NIGHT_NO : AppCompatDelegate.MODE_NIGHT_YES
+            );
         }
     }
 
@@ -120,7 +117,7 @@ public class SettingsActivity extends AppCompatActivity {
         else                                               sp = AppSettings.FONT_SIZE_MEDIUM_SP;
 
         binding.fontPreview.setTextSize(sp);
-        binding.fontPreview.setText("Preview: $ pkg install wget\nFetching package list... Done\n✓ selesai (3s)");
+        binding.fontPreview.setText("Preview: $ pkg install wget\nFetching package list... Done\n\u2713 selesai (3s)");
     }
 
     private void updateThemeLabel() {
@@ -129,7 +126,7 @@ public class SettingsActivity extends AppCompatActivity {
 
     @Override
     public boolean onSupportNavigateUp() {
-        onBackPressed();
+        finish();
         return true;
     }
 }

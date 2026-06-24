@@ -26,24 +26,25 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- ── TERMUX PATH ── -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="⚙ TERMUX"
+                android:text="&#9881; TERMUX"
                 android:textColor="@color/colorPrimary"
                 android:textSize="11sp"
                 android:textStyle="bold"
                 android:letterSpacing="0.1"
                 android:layout_marginBottom="6dp" />
 
-            <androidx.cardview.widget.CardView
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
                 app:cardCornerRadius="10dp"
                 app:cardBackgroundColor="@color/surface_dark"
-                app:cardElevation="2dp">
+                app:cardElevation="2dp"
+                app:strokeColor="@color/border_color"
+                app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -118,35 +119,46 @@
                         android:textSize="12sp"
                         android:layout_marginBottom="8dp" />
 
-                    <Spinner
-                        android:id="@+id/spinner_shell"
+                    <com.google.android.material.textfield.TextInputLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:backgroundTint="@color/colorPrimary"
-                        android:dropDownVerticalOffset="40dp" />
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                        app:boxStrokeColor="@color/colorPrimary"
+                        app:hintTextColor="@color/text_secondary">
+
+                        <AutoCompleteTextView
+                            android:id="@+id/spinner_shell"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="none"
+                            android:textColor="@color/text_primary"
+                            android:textSize="13sp" />
+
+                    </com.google.android.material.textfield.TextInputLayout>
 
                 </LinearLayout>
 
-            </androidx.cardview.widget.CardView>
+            </com.google.android.material.card.MaterialCardView>
 
-            <!-- ── CONSOLE ── -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="🖥 CONSOLE"
+                android:text="&#128421; CONSOLE"
                 android:textColor="@color/colorPrimary"
                 android:textSize="11sp"
                 android:textStyle="bold"
                 android:letterSpacing="0.1"
                 android:layout_marginBottom="6dp" />
 
-            <androidx.cardview.widget.CardView
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
                 app:cardCornerRadius="10dp"
                 app:cardBackgroundColor="@color/surface_dark"
-                app:cardElevation="2dp">
+                app:cardElevation="2dp"
+                app:strokeColor="@color/border_color"
+                app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -198,7 +210,6 @@
 
                     </RadioGroup>
 
-                    <!-- Preview -->
                     <TextView
                         android:id="@+id/font_preview"
                         android:layout_width="match_parent"
@@ -217,7 +228,6 @@
                         android:background="@color/border_color"
                         android:layout_marginVertical="10dp" />
 
-                    <!-- Show exit code -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -259,7 +269,6 @@
                         android:background="@color/border_color"
                         android:layout_marginVertical="10dp" />
 
-                    <!-- Filter stderr -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -297,26 +306,27 @@
 
                 </LinearLayout>
 
-            </androidx.cardview.widget.CardView>
+            </com.google.android.material.card.MaterialCardView>
 
-            <!-- ── TAMPILAN ── -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="🎨 TAMPILAN"
+                android:text="&#127912; TAMPILAN"
                 android:textColor="@color/colorPrimary"
                 android:textSize="11sp"
                 android:textStyle="bold"
                 android:letterSpacing="0.1"
                 android:layout_marginBottom="6dp" />
 
-            <androidx.cardview.widget.CardView
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
                 app:cardCornerRadius="10dp"
                 app:cardBackgroundColor="@color/surface_dark"
-                app:cardElevation="2dp">
+                app:cardElevation="2dp"
+                app:strokeColor="@color/border_color"
+                app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -352,14 +362,13 @@
 
                 </LinearLayout>
 
-            </androidx.cardview.widget.CardView>
+            </com.google.android.material.card.MaterialCardView>
 
-            <!-- ── BUTTONS ── -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_save"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="💾 Simpan Pengaturan"
+                android:text="&#128190; Simpan Pengaturan"
                 android:backgroundTint="@color/colorPrimary"
                 android:layout_marginBottom="10dp"
                 style="@style/Widget.MaterialComponents.Button" />
@@ -368,7 +377,7 @@
                 android:id="@+id/btn_reset"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="↺ Reset Semua ke Default"
+                android:text="&#8634; Reset Semua ke Default"
                 android:textColor="@color/error_color"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 app:strokeColor="@color/error_color"

@@ -6,10 +6,10 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.card.MaterialCardView;
 import com.kztutorial.termuxiwx.R;
 import com.kztutorial.termuxiwx.models.ScriptItem;
 
@@ -88,7 +88,7 @@ public class ScriptAdapter extends RecyclerView.Adapter<ScriptAdapter.ViewHolder
     public int getItemCount() { return items.size(); }
 
     static class ViewHolder extends RecyclerView.ViewHolder {
-        CardView card;
+        MaterialCardView card;
         TextView name, description, category;
 
         ViewHolder(@NonNull View itemView) {

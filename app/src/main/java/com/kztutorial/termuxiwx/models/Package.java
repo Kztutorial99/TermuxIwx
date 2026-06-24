@@ -18,27 +18,25 @@ public class Package {
     public String getDescription() { return description; }
     public boolean isInstalled() { return installed; }
     public void setInstalled(boolean installed) { this.installed = installed; }
+    public void setDescription(String description) { this.description = description; }
 
+    /**
+     * Parses the FIRST line of an apt search result entry.
+     * Real format: "pkgname/stable version arch [installed]"
+     * Description is on the NEXT line (indented with spaces) — handled by caller.
+     */
     public static Package parseFromAptSearch(String line) {
         if (line == null || line.trim().isEmpty()) return null;
         try {
             String[] parts = line.split("/");
             if (parts.length < 2) return null;
             String name = parts[0].trim();
-            String rest = parts[1];
-            String[] restParts = rest.trim().split("\\s+");
+            if (name.isEmpty()) return null;
+            String rest = parts[1].trim();
+            String[] restParts = rest.split("\\s+");
             String version = restParts.length > 0 ? restParts[0].trim() : "";
-            String desc = "";
-            if (restParts.length > 3) {
-                StringBuilder sb = new StringBuilder();
-                for (int i = 3; i < restParts.length; i++) {
-                    if (i > 3) sb.append(" ");
-                    sb.append(restParts[i]);
-                }
-                desc = sb.toString();
-            }
-            boolean installed = line.contains("[installed]");
-            return new Package(name, version, desc, installed);
+            boolean isInstalled = line.contains("[installed]");
+            return new Package(name, version, "", isInstalled);
         } catch (Exception e) {
             return null;
         }

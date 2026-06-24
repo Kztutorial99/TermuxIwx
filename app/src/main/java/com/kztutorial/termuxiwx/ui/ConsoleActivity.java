@@ -30,6 +30,7 @@ public class ConsoleActivity extends AppCompatActivity {
 
     private static final String ACTION_RESULT = "com.kztutorial.termuxiwx.CONSOLE_RESULT";
     private static final int MAX_HISTORY = 50;
+    private static final int MAX_OUTPUT_LINES = 500;
 
     private ActivityConsoleBinding binding;
     private AppSettings settings;
@@ -46,7 +47,7 @@ public class ConsoleActivity extends AppCompatActivity {
         public void run() {
             if (!isRunning) return;
             long elapsed = (System.currentTimeMillis() - startTime) / 1000;
-            binding.runningStatus.setText("⏳ Menjalankan... " + elapsed + "s");
+            binding.runningStatus.setText("\u23f3 Menjalankan... " + elapsed + "s");
             timerHandler.postDelayed(this, 1000);
         }
     };
@@ -87,7 +88,7 @@ public class ConsoleActivity extends AppCompatActivity {
 
         outputBuffer.append("TermuxIwx Console v1.5\n");
         outputBuffer.append("Ketik perintah lalu tekan Run atau Enter\n");
-        outputBuffer.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+        outputBuffer.append("\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n");
         binding.consoleOutput.setText(outputBuffer.toString());
 
         binding.cmdInput.setOnEditorActionListener((v, actionId, event) -> {
@@ -102,7 +103,7 @@ public class ConsoleActivity extends AppCompatActivity {
 
         binding.btnClear.setOnClickListener(v -> {
             outputBuffer.setLength(0);
-            outputBuffer.append("Console cleared.\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+            outputBuffer.append("Console cleared.\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n");
             binding.consoleOutput.setText(outputBuffer.toString());
         });
 
@@ -113,7 +114,7 @@ public class ConsoleActivity extends AppCompatActivity {
         binding.chipPkgUpdate.setOnClickListener(v -> { binding.cmdInput.setText("pkg update"); runCommand(); });
         binding.chipPwd.setOnClickListener(v -> { binding.cmdInput.setText("pwd"); runCommand(); });
         binding.chipDf.setOnClickListener(v -> { binding.cmdInput.setText("df -h"); runCommand(); });
-        binding.chipTop.setOnClickListener(v -> { binding.cmdInput.setText("pkg list-installed 2>/dev/null | wc -l"); runCommand(); });
+        binding.chipTop.setOnClickListener(v -> { binding.cmdInput.setText("pkg list-installed"); runCommand(); });
         binding.chipUname.setOnClickListener(v -> { binding.cmdInput.setText("uname -a"); runCommand(); });
 
         String initialCmd = getIntent().getStringExtra("initial_cmd");
@@ -161,7 +162,7 @@ public class ConsoleActivity extends AppCompatActivity {
         binding.btnHistoryDown.setEnabled(false);
         binding.progressBar.setVisibility(View.VISIBLE);
         binding.runningStatus.setVisibility(View.VISIBLE);
-        binding.runningStatus.setText("⏳ Menjalankan...");
+        binding.runningStatus.setText("\u23f3 Menjalankan...");
 
         startTime = System.currentTimeMillis();
         timerHandler.post(timerRunnable);
@@ -197,17 +198,33 @@ public class ConsoleActivity extends AppCompatActivity {
         boolean showExit = settings.isShowExitCode();
         if (showExit) {
             if (exitCode == 0) {
-                outputBuffer.append("✓ selesai (").append(elapsed).append("s)\n");
+                outputBuffer.append("\u2713 selesai (").append(elapsed).append("s)\n");
             } else {
-                outputBuffer.append("✗ exit: ").append(exitCode).append(" (").append(elapsed).append("s)\n");
+                outputBuffer.append("\u2717 exit: ").append(exitCode).append(" (").append(elapsed).append("s)\n");
             }
         }
+
+        trimOutputIfNeeded();
 
         binding.consoleOutput.setText(outputBuffer.toString());
         scrollToBottom();
 
         detectAndSuggestInstall(stdout, stderr, exitCode);
         binding.cmdInput.requestFocus();
+    }
+
+    private void trimOutputIfNeeded() {
+        String content = outputBuffer.toString();
+        String[] lines = content.split("\n");
+        if (lines.length > MAX_OUTPUT_LINES) {
+            StringBuilder trimmed = new StringBuilder();
+            trimmed.append("[... output terpotong, menampilkan ").append(MAX_OUTPUT_LINES).append(" baris terakhir ...]\n");
+            for (int i = lines.length - MAX_OUTPUT_LINES; i < lines.length; i++) {
+                trimmed.append(lines[i]).append("\n");
+            }
+            outputBuffer.setLength(0);
+            outputBuffer.append(trimmed);
+        }
     }
 
     private String filterStderr(String stderr) {
@@ -245,9 +262,9 @@ public class ConsoleActivity extends AppCompatActivity {
 
         String finalPkgName = pkgName;
         new AlertDialog.Builder(this)
-            .setTitle("⚠ Perintah Tidak Ditemukan")
+            .setTitle("\u26a0 Perintah Tidak Ditemukan")
             .setMessage("\"" + baseCmd + "\" belum terinstall di Termux.\n\nInstall sekarang via:\npkg install " + finalPkgName)
-            .setPositiveButton("⚡ Install Sekarang", (d, w) -> {
+            .setPositiveButton("\u26a1 Install Sekarang", (d, w) -> {
                 binding.cmdInput.setText("pkg install -y " + finalPkgName);
                 runCommand();
             })
@@ -302,8 +319,8 @@ public class ConsoleActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onResume() {
-        super.onResume();
+    protected void onStart() {
+        super.onStart();
         IntentFilter filter = new IntentFilter(ACTION_RESULT);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(resultReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
@@ -313,8 +330,8 @@ public class ConsoleActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onPause() {
-        super.onPause();
+    protected void onStop() {
+        super.onStop();
         timerHandler.removeCallbacks(timerRunnable);
         try { unregisterReceiver(resultReceiver); } catch (Exception ignored) {}
     }

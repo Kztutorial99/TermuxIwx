@@ -13,6 +13,11 @@
         app:showAsAction="never" />
 
     <item
+        android:id="@+id/action_check_update"
+        android:title="🔄 Cek Update"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/action_settings"
         android:title="⚙ Pengaturan"
         app:showAsAction="never" />

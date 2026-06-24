@@ -12,3 +12,5 @@ app/build/
 *.apk
 *.aab
 keystore/
+.local/
+*.jks

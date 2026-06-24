@@ -63,7 +63,7 @@ public class PackageDetailActivity extends AppCompatActivity {
 
         binding.pkgName.setText(pkgName);
         binding.pkgVersion.setText("v" + (pkgVersion != null ? pkgVersion : "-"));
-        binding.pkgStatus.setText(isInstalled ? "✓ Terinstall" : "Belum terinstall");
+        binding.pkgStatus.setText(isInstalled ? "\u2713 Terinstall" : "Belum terinstall");
         binding.pkgStatus.setTextColor(getColor(isInstalled ?
                 com.kztutorial.termuxiwx.R.color.success_color :
                 com.kztutorial.termuxiwx.R.color.warning_color));
@@ -111,7 +111,7 @@ public class PackageDetailActivity extends AppCompatActivity {
     }
 
     private void updateButtons() {
-        binding.btnInstall.setText(isInstalled ? "🗑 Hapus Package" : "⚡ Install Sekarang");
+        binding.btnInstall.setText(isInstalled ? "\ud83d\uddd1 Hapus Package" : "\u26a1 Install Sekarang");
         binding.btnInstall.setBackgroundTintList(getColorStateList(isInstalled ?
                 com.kztutorial.termuxiwx.R.color.error_color :
                 com.kztutorial.termuxiwx.R.color.colorPrimary));
@@ -124,11 +124,16 @@ public class PackageDetailActivity extends AppCompatActivity {
             if (exitCode == 0) {
                 isInstalled = true;
                 updateButtons();
-                binding.pkgStatus.setText("✓ Terinstall");
+                binding.pkgStatus.setText("\u2713 Terinstall");
                 binding.pkgStatus.setTextColor(getColor(com.kztutorial.termuxiwx.R.color.success_color));
-                Snackbar.make(binding.getRoot(), pkgName + " berhasil diinstall! ✓", Snackbar.LENGTH_SHORT).show();
+                Snackbar.make(binding.getRoot(), pkgName + " berhasil diinstall! \u2713", Snackbar.LENGTH_SHORT).show();
             } else {
-                Snackbar.make(binding.getRoot(), "Gagal install " + pkgName + ". Cek Console untuk detail.", Snackbar.LENGTH_LONG).show();
+                Snackbar.make(binding.getRoot(), "Gagal install " + pkgName + ". Buka Console untuk detail.", Snackbar.LENGTH_LONG)
+                    .setAction("Buka Console", v -> {
+                        Intent console = new Intent(this, ConsoleActivity.class);
+                        console.putExtra("initial_cmd", "apt install -y " + pkgName);
+                        startActivity(console);
+                    }).show();
             }
         } else if (pendingAction == ACTION_REMOVE) {
             if (exitCode == 0) {
@@ -138,7 +143,8 @@ public class PackageDetailActivity extends AppCompatActivity {
                 binding.pkgStatus.setTextColor(getColor(com.kztutorial.termuxiwx.R.color.warning_color));
                 Snackbar.make(binding.getRoot(), pkgName + " berhasil dihapus.", Snackbar.LENGTH_SHORT).show();
             } else {
-                Snackbar.make(binding.getRoot(), "Gagal hapus " + pkgName + ". Cek Console untuk detail.", Snackbar.LENGTH_LONG).show();
+                Snackbar.make(binding.getRoot(), "Gagal hapus " + pkgName + ". Buka Console untuk detail.", Snackbar.LENGTH_LONG)
+                    .setAction("Buka Console", v -> startActivity(new Intent(this, ConsoleActivity.class))).show();
             }
         } else if (pendingAction == ACTION_PURGE) {
             if (exitCode == 0) {
@@ -146,9 +152,10 @@ public class PackageDetailActivity extends AppCompatActivity {
                 updateButtons();
                 binding.pkgStatus.setText("Belum terinstall");
                 binding.pkgStatus.setTextColor(getColor(com.kztutorial.termuxiwx.R.color.warning_color));
-                Snackbar.make(binding.getRoot(), pkgName + " + config berhasil dihapus (purge). ✓", Snackbar.LENGTH_SHORT).show();
+                Snackbar.make(binding.getRoot(), pkgName + " + config berhasil dihapus (purge). \u2713", Snackbar.LENGTH_SHORT).show();
             } else {
-                Snackbar.make(binding.getRoot(), "Gagal purge " + pkgName + ". Cek Console untuk detail.", Snackbar.LENGTH_LONG).show();
+                Snackbar.make(binding.getRoot(), "Gagal purge " + pkgName + ". Buka Console untuk detail.", Snackbar.LENGTH_LONG)
+                    .setAction("Buka Console", v -> startActivity(new Intent(this, ConsoleActivity.class))).show();
             }
         } else if (pendingAction == ACTION_INFO) {
             binding.pkgInfo.setText(stdout.isEmpty() ? "Tidak ada info tersedia." : stdout);
@@ -177,8 +184,8 @@ public class PackageDetailActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onResume() {
-        super.onResume();
+    protected void onStart() {
+        super.onStart();
         IntentFilter filter = new IntentFilter(ACTION_RESULT);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(resultReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
@@ -188,8 +195,8 @@ public class PackageDetailActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onPause() {
-        super.onPause();
+    protected void onStop() {
+        super.onStop();
         try { unregisterReceiver(resultReceiver); } catch (Exception ignored) {}
     }
 
