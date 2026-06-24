@@ -21,6 +21,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.kztutorial.termuxiwx.R;
 import com.kztutorial.termuxiwx.databinding.ActivityConsoleBinding;
+import com.kztutorial.termuxiwx.utils.AppSettings;
 import com.kztutorial.termuxiwx.utils.TermuxConnector;
 
 public class ConsoleActivity extends AppCompatActivity {
@@ -65,6 +66,9 @@ public class ConsoleActivity extends AppCompatActivity {
         setSupportActionBar(binding.toolbar);
         if (getSupportActionBar() != null) getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         setTitle("Console");
+
+        AppSettings settings = new AppSettings(this);
+        binding.consoleOutput.setTextSize(settings.getFontSizeSp());
 
         outputBuffer.append("TermuxIwx Console v1.0\n");
         outputBuffer.append("Ketik perintah lalu tekan Run atau Enter\n");
