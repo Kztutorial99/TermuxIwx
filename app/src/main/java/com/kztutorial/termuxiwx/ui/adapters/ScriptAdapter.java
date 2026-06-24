@@ -7,11 +7,13 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
+import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.kztutorial.termuxiwx.R;
 import com.kztutorial.termuxiwx.models.ScriptItem;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class ScriptAdapter extends RecyclerView.Adapter<ScriptAdapter.ViewHolder> {
@@ -20,12 +22,35 @@ public class ScriptAdapter extends RecyclerView.Adapter<ScriptAdapter.ViewHolder
         void onItemClick(ScriptItem item);
     }
 
-    private final List<ScriptItem> items;
+    private List<ScriptItem> items = new ArrayList<>();
     private final OnItemClickListener listener;
 
-    public ScriptAdapter(List<ScriptItem> items, OnItemClickListener listener) {
-        this.items = items;
+    public ScriptAdapter(List<ScriptItem> initialItems, OnItemClickListener listener) {
+        this.items = new ArrayList<>(initialItems);
         this.listener = listener;
+    }
+
+    public void updateList(List<ScriptItem> newList) {
+        final List<ScriptItem> oldList = items;
+        DiffUtil.DiffResult result = DiffUtil.calculateDiff(new DiffUtil.Callback() {
+            @Override public int getOldListSize() { return oldList.size(); }
+            @Override public int getNewListSize() { return newList.size(); }
+
+            @Override
+            public boolean areItemsTheSame(int op, int np) {
+                return oldList.get(op).getName().equals(newList.get(np).getName());
+            }
+
+            @Override
+            public boolean areContentsTheSame(int op, int np) {
+                ScriptItem o = oldList.get(op);
+                ScriptItem n = newList.get(np);
+                return o.getName().equals(n.getName())
+                    && o.getCategory().equals(n.getCategory());
+            }
+        });
+        items = new ArrayList<>(newList);
+        result.dispatchUpdatesTo(this);
     }
 
     @NonNull

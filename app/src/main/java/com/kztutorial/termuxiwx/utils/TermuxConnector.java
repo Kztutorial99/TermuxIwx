@@ -93,22 +93,16 @@ public class TermuxConnector {
                 true, resultIntent, "apt remove " + packageName);
     }
 
+    public static void aptPurge(Context context, String packageName, PendingIntent resultIntent) {
+        runCommand(context, getBinPath(context) + "/apt",
+                new String[]{"purge", "-y", packageName},
+                true, resultIntent, "apt purge " + packageName);
+    }
+
     public static void pkgInfo(Context context, String packageName, PendingIntent resultIntent) {
         runCommand(context, getBinPath(context) + "/apt",
                 new String[]{"show", packageName},
                 true, resultIntent, "apt show " + packageName);
-    }
-
-    public static void runScript(Context context, String scriptPath, PendingIntent resultIntent) {
-        runCommand(context, getShell(context),
-                new String[]{scriptPath},
-                false, resultIntent, "run script");
-    }
-
-    public static void listScripts(Context context, PendingIntent resultIntent) {
-        runCommand(context, getBinPath(context) + "/find",
-                new String[]{"/data/data/com.termux/files/home", "-name", "*.sh", "-o", "-name", "*.py", "-o", "-name", "*.rb"},
-                true, resultIntent, "list scripts");
     }
 
     public static void getStorageInfo(Context context, PendingIntent resultIntent) {

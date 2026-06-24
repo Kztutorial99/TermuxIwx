@@ -9,12 +9,13 @@ import android.os.Build;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.widget.Toast;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
+import com.google.android.material.snackbar.Snackbar;
 import com.kztutorial.termuxiwx.databinding.ActivityScriptRepoBinding;
 import com.kztutorial.termuxiwx.models.ScriptItem;
 import com.kztutorial.termuxiwx.ui.adapters.ScriptAdapter;
@@ -40,14 +41,11 @@ public class ScriptRepoActivity extends AppCompatActivity {
             Bundle result = extras != null ? extras.getBundle("result") : null;
             int exitCode = result != null ? result.getInt("exitCode", -1) : -1;
             runOnUiThread(() -> {
+                String name = pendingInstall != null ? pendingInstall.getName() : "Tool";
                 if (exitCode == 0) {
-                    Toast.makeText(ScriptRepoActivity.this,
-                        "✅ " + (pendingInstall != null ? pendingInstall.getName() : "Tool") + " berhasil diinstall!",
-                        Toast.LENGTH_SHORT).show();
+                    Snackbar.make(binding.getRoot(), "✅ " + name + " berhasil diinstall!", Snackbar.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(ScriptRepoActivity.this,
-                        "❌ Gagal install. Cek Console untuk detail.",
-                        Toast.LENGTH_LONG).show();
+                    Snackbar.make(binding.getRoot(), "❌ Gagal install " + name + ". Cek Console.", Snackbar.LENGTH_LONG).show();
                 }
                 pendingInstall = null;
             });
@@ -66,6 +64,13 @@ public class ScriptRepoActivity extends AppCompatActivity {
             getSupportActionBar().setTitle("Script & Tools Repository");
         }
 
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                finish();
+            }
+        });
+
         setupScripts();
         setupRecyclerView();
         setupSearch();
@@ -83,6 +88,8 @@ public class ScriptRepoActivity extends AppCompatActivity {
         allScripts.add(new ScriptItem("golang", "Go programming language", "pkg install -y golang", "Dev", "go version"));
         allScripts.add(new ScriptItem("rust", "Rust compiler", "pkg install -y rust", "Dev", "rustc --version"));
         allScripts.add(new ScriptItem("clang", "C/C++ compiler", "pkg install -y clang", "Dev", "clang --version"));
+        allScripts.add(new ScriptItem("openjdk-17", "Java Development Kit 17", "pkg install -y openjdk-17", "Dev", "java --version"));
+        allScripts.add(new ScriptItem("pip packages", "Install common Python libs", "pip install requests beautifulsoup4 flask django numpy pandas", "Dev", "pip list"));
         allScripts.add(new ScriptItem("nmap", "Network scanner & security", "pkg install -y nmap", "Security", "nmap --version"));
         allScripts.add(new ScriptItem("hydra", "Password brute-force tool", "pkg install -y hydra", "Security", "hydra -h 2>&1 | head -5"));
         allScripts.add(new ScriptItem("metasploit", "Penetration testing framework", "pkg install -y unstable-repo && pkg install -y metasploit", "Security", "msfconsole --version"));
@@ -104,11 +111,9 @@ public class ScriptRepoActivity extends AppCompatActivity {
         allScripts.add(new ScriptItem("zsh", "Z shell (alternative bash)", "pkg install -y zsh && chsh -s zsh", "Shell", "zsh --version"));
         allScripts.add(new ScriptItem("fish", "Friendly interactive shell", "pkg install -y fish", "Shell", "fish --version"));
         allScripts.add(new ScriptItem("oh-my-zsh", "Zsh framework & themes", "pkg install -y zsh && sh -c \"$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)\"", "Shell", "zsh --version"));
-        allScripts.add(new ScriptItem("openjdk-17", "Java Development Kit 17", "pkg install -y openjdk-17", "Dev", "java --version"));
         allScripts.add(new ScriptItem("mariadb", "MySQL-compatible database", "pkg install -y mariadb", "Database", "mysql --version"));
         allScripts.add(new ScriptItem("postgresql", "PostgreSQL database", "pkg install -y postgresql", "Database", "psql --version"));
         allScripts.add(new ScriptItem("redis", "In-memory data store", "pkg install -y redis", "Database", "redis-server --version"));
-        allScripts.add(new ScriptItem("pip packages", "Install common Python libs", "pip install requests beautifulsoup4 flask django numpy pandas", "Dev", "pip list"));
         filteredScripts.addAll(allScripts);
     }
 
@@ -126,7 +131,7 @@ public class ScriptRepoActivity extends AppCompatActivity {
             .setPositiveButton("⚡ Install", (d, w) -> {
                 pendingInstall = item;
                 TermuxConnector.customCommand(this, item.getInstallCmd(), buildPendingIntent());
-                Toast.makeText(this, "Menginstall " + item.getName() + "...", Toast.LENGTH_SHORT).show();
+                Snackbar.make(binding.getRoot(), "Menginstall " + item.getName() + "...", Snackbar.LENGTH_SHORT).show();
             })
             .setNeutralButton("🖥 Buka Console", (d, w) -> {
                 Intent console = new Intent(this, ConsoleActivity.class);
@@ -156,6 +161,9 @@ public class ScriptRepoActivity extends AppCompatActivity {
         binding.chipTool.setOnClickListener(v -> filterScripts(getQuery(), "Tool"));
         binding.chipShell.setOnClickListener(v -> filterScripts(getQuery(), "Shell"));
         binding.chipTermux.setOnClickListener(v -> filterScripts(getQuery(), "Termux"));
+        binding.chipDatabase.setOnClickListener(v -> filterScripts(getQuery(), "Database"));
+        binding.chipEditor.setOnClickListener(v -> filterScripts(getQuery(), "Editor"));
+        binding.chipMedia.setOnClickListener(v -> filterScripts(getQuery(), "Media"));
     }
 
     private String getQuery() {
@@ -169,20 +177,23 @@ public class ScriptRepoActivity extends AppCompatActivity {
         if (binding.chipTool.isChecked()) return "Tool";
         if (binding.chipShell.isChecked()) return "Shell";
         if (binding.chipTermux.isChecked()) return "Termux";
+        if (binding.chipDatabase.isChecked()) return "Database";
+        if (binding.chipEditor.isChecked()) return "Editor";
+        if (binding.chipMedia.isChecked()) return "Media";
         return "All";
     }
 
     private void filterScripts(String query, String category) {
-        filteredScripts.clear();
+        List<ScriptItem> newList = new ArrayList<>();
         for (ScriptItem item : allScripts) {
             boolean matchQuery = query.isEmpty()
                 || item.getName().toLowerCase().contains(query)
                 || item.getDescription().toLowerCase().contains(query);
             boolean matchCat = category.equals("All") || item.getCategory().equals(category);
-            if (matchQuery && matchCat) filteredScripts.add(item);
+            if (matchQuery && matchCat) newList.add(item);
         }
-        adapter.notifyDataSetChanged();
-        binding.countText.setText(filteredScripts.size() + " tools");
+        adapter.updateList(newList);
+        binding.countText.setText(newList.size() + " tools");
     }
 
     private PendingIntent buildPendingIntent() {
@@ -212,7 +223,7 @@ public class ScriptRepoActivity extends AppCompatActivity {
 
     @Override
     public boolean onSupportNavigateUp() {
-        onBackPressed();
+        finish();
         return true;
     }
 }

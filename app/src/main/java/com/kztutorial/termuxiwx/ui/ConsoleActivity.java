@@ -5,17 +5,19 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.activity.OnBackPressedCallback;
 
+import com.google.android.material.snackbar.Snackbar;
 import com.kztutorial.termuxiwx.R;
 import com.kztutorial.termuxiwx.databinding.ActivityConsoleBinding;
 import com.kztutorial.termuxiwx.utils.AppSettings;
@@ -72,10 +74,18 @@ public class ConsoleActivity extends AppCompatActivity {
         if (getSupportActionBar() != null) getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         setTitle("Console");
 
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                finish();
+            }
+        });
+
         settings = new AppSettings(this);
         binding.consoleOutput.setTextSize(settings.getFontSizeSp());
+        binding.consoleOutput.setTypeface(Typeface.MONOSPACE);
 
-        outputBuffer.append("TermuxIwx Console v1.0\n");
+        outputBuffer.append("TermuxIwx Console v1.5\n");
         outputBuffer.append("Ketik perintah lalu tekan Run atau Enter\n");
         outputBuffer.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
         binding.consoleOutput.setText(outputBuffer.toString());
@@ -128,7 +138,7 @@ public class ConsoleActivity extends AppCompatActivity {
         String cmd = binding.cmdInput.getText().toString().trim();
         if (cmd.isEmpty()) return;
         if (isRunning) {
-            Toast.makeText(this, "Tunggu perintah sebelumnya selesai...", Toast.LENGTH_SHORT).show();
+            Snackbar.make(binding.getRoot(), "Tunggu perintah sebelumnya selesai...", Snackbar.LENGTH_SHORT).show();
             return;
         }
 
@@ -311,7 +321,7 @@ public class ConsoleActivity extends AppCompatActivity {
 
     @Override
     public boolean onSupportNavigateUp() {
-        onBackPressed();
+        finish();
         return true;
     }
 }

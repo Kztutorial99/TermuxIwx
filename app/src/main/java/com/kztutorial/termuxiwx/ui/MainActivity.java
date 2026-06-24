@@ -7,17 +7,19 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
+import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
 import com.kztutorial.termuxiwx.R;
 import com.kztutorial.termuxiwx.databinding.ActivityMainBinding;
@@ -37,10 +39,14 @@ public class MainActivity extends AppCompatActivity {
     private static final int CMD_UPGRADE  = 4;
     private static final int CMD_STORAGE  = 5;
 
+    private static final long SEARCH_DEBOUNCE_MS = 500;
+
     private ActivityMainBinding binding;
     private PackageAdapter adapter;
-    private List<Package> packageList = new ArrayList<>();
     private int currentCommand = 0;
+
+    private final Handler debounceHandler = new Handler(Looper.getMainLooper());
+    private Runnable searchRunnable;
 
     private final BroadcastReceiver resultReceiver = new BroadcastReceiver() {
         @Override
@@ -80,13 +86,15 @@ public class MainActivity extends AppCompatActivity {
         } else {
             binding.statusCard.setVisibility(View.VISIBLE);
             binding.statusIcon.setImageResource(R.drawable.ic_check);
-            binding.statusText.setText("Termux terdeteksi ✓ — Pastikan allow-external-apps=true di termux.properties");
+            binding.statusText.setText("Termux terdeteksi ✓ — Pastikan allow-external-apps=true");
             binding.statusCard.setCardBackgroundColor(getColor(R.color.success_color));
+            new Handler(Looper.getMainLooper()).postDelayed(
+                () -> binding.statusCard.setVisibility(View.GONE), 3000);
         }
     }
 
     private void setupRecyclerView() {
-        adapter = new PackageAdapter(packageList, pkg -> {
+        adapter = new PackageAdapter(pkg -> {
             Intent detail = new Intent(this, PackageDetailActivity.class);
             detail.putExtra("pkg_name", pkg.getName());
             detail.putExtra("pkg_version", pkg.getVersion());
@@ -109,7 +117,7 @@ public class MainActivity extends AppCompatActivity {
                 switch (tab.getPosition()) {
                     case 0:
                         binding.searchLayout.setVisibility(View.VISIBLE);
-                        loadSearch("");
+                        loadSearch(binding.searchInput.getText().toString());
                         break;
                     case 1:
                         binding.searchLayout.setVisibility(View.GONE);
@@ -143,18 +151,25 @@ public class MainActivity extends AppCompatActivity {
             @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
             @Override
             public void afterTextChanged(Editable s) {
-                if (s.length() >= 2) loadSearch(s.toString());
-                else if (s.length() == 0) {
-                    packageList.clear();
-                    adapter.notifyDataSetChanged();
+                String query = s.toString().trim();
+                debounceHandler.removeCallbacks(searchRunnable);
+                if (query.isEmpty()) {
+                    adapter.updateList(new ArrayList<>());
                     binding.emptyState.setVisibility(View.GONE);
+                    return;
                 }
+                if (query.length() < 2) return;
+                searchRunnable = () -> loadSearch(query);
+                debounceHandler.postDelayed(searchRunnable, SEARCH_DEBOUNCE_MS);
             }
         });
 
         binding.btnSearch.setOnClickListener(v -> {
             String q = binding.searchInput.getText().toString().trim();
-            if (!q.isEmpty()) loadSearch(q);
+            if (!q.isEmpty()) {
+                debounceHandler.removeCallbacks(searchRunnable);
+                loadSearch(q);
+            }
         });
     }
 
@@ -178,8 +193,7 @@ public class MainActivity extends AppCompatActivity {
     private void loadSearch(String query) {
         currentCommand = CMD_SEARCH;
         if (query.isEmpty()) {
-            packageList.clear();
-            adapter.notifyDataSetChanged();
+            adapter.updateList(new ArrayList<>());
             return;
         }
         showLoading(true, "Mencari package '" + query + "'...");
@@ -206,17 +220,17 @@ public class MainActivity extends AppCompatActivity {
 
         if (currentCommand == CMD_UPDATE) {
             if (exitCode == 0) {
-                Toast.makeText(this, "Repository diupdate! ✓", Toast.LENGTH_SHORT).show();
+                Snackbar.make(binding.getRoot(), "Repository diupdate! ✓", Snackbar.LENGTH_SHORT).show();
             } else {
-                Toast.makeText(this, "Update gagal. Cek koneksi internet.", Toast.LENGTH_SHORT).show();
+                Snackbar.make(binding.getRoot(), "Update gagal. Cek koneksi internet.", Snackbar.LENGTH_LONG).show();
             }
             return;
         }
 
         if (currentCommand == CMD_UPGRADE) {
-            Toast.makeText(this,
+            Snackbar.make(binding.getRoot(),
                 exitCode == 0 ? "Upgrade selesai! ✓" : "Upgrade selesai dengan beberapa error.",
-                Toast.LENGTH_SHORT).show();
+                Snackbar.LENGTH_SHORT).show();
             return;
         }
 
@@ -229,27 +243,27 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        packageList.clear();
+        List<Package> newList = new ArrayList<>();
 
         if (currentCommand == CMD_SEARCH) {
             for (String line : stdout.split("\n")) {
                 String trimmed = line.trim();
                 if (trimmed.isEmpty() || trimmed.startsWith("WARNING") || trimmed.startsWith("NOTE")) continue;
                 Package pkg = Package.parseFromAptSearch(trimmed);
-                if (pkg != null) packageList.add(pkg);
+                if (pkg != null) newList.add(pkg);
             }
         } else if (currentCommand == CMD_INSTALLED) {
             for (String line : stdout.split("\n")) {
                 Package pkg = Package.parseFromDpkg(line);
-                if (pkg != null) packageList.add(pkg);
+                if (pkg != null) newList.add(pkg);
             }
         }
 
-        adapter.notifyDataSetChanged();
+        adapter.updateList(newList);
 
-        if (packageList.isEmpty() && exitCode != 0) {
+        if (newList.isEmpty() && exitCode != 0) {
             showEmptyState("Tidak ada hasil. " + (stderr.isEmpty() ? "" : stderr.split("\n")[0]));
-        } else if (packageList.isEmpty()) {
+        } else if (newList.isEmpty()) {
             showEmptyState(currentCommand == CMD_INSTALLED
                 ? "Tidak ada package terinstall ditemukan."
                 : "Tidak ada package ditemukan.");
@@ -292,6 +306,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
+        debounceHandler.removeCallbacks(searchRunnable);
         try { unregisterReceiver(resultReceiver); } catch (Exception ignored) {}
     }
 
@@ -328,8 +343,8 @@ public class MainActivity extends AppCompatActivity {
 
     private void showAbout() {
         new AlertDialog.Builder(this)
-            .setTitle("TermuxIwx v1.0")
-            .setMessage("Package manager & toolbox untuk Termux.\n\nDibuat oleh Kztutorial99\n\nPastikan:\n• Termux terinstall dari F-Droid\n• allow-external-apps=true\n• Permission RUN_COMMAND granted")
+            .setTitle("TermuxIwx v1.5.0")
+            .setMessage("Package manager & toolbox untuk Termux.\n\nDibuat oleh Kztutorial99\n\nPastikan:\n• Termux terinstall dari F-Droid (bukan Play Store)\n• allow-external-apps=true di termux.properties\n• Permission RUN_COMMAND granted di Termux")
             .setPositiveButton("OK", null)
             .show();
     }

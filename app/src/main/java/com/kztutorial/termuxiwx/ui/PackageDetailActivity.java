@@ -8,11 +8,12 @@ import android.content.IntentFilter;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.Toast;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.android.material.snackbar.Snackbar;
 import com.kztutorial.termuxiwx.databinding.ActivityPackageDetailBinding;
 import com.kztutorial.termuxiwx.utils.TermuxConnector;
 
@@ -24,8 +25,9 @@ public class PackageDetailActivity extends AppCompatActivity {
     private boolean isInstalled;
     private int pendingAction = 0;
     private static final int ACTION_INSTALL = 1;
-    private static final int ACTION_REMOVE = 2;
-    private static final int ACTION_INFO = 3;
+    private static final int ACTION_REMOVE  = 2;
+    private static final int ACTION_INFO    = 3;
+    private static final int ACTION_PURGE   = 4;
 
     private final BroadcastReceiver resultReceiver = new BroadcastReceiver() {
         @Override
@@ -48,12 +50,19 @@ public class PackageDetailActivity extends AppCompatActivity {
         setSupportActionBar(binding.toolbar);
         if (getSupportActionBar() != null) getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                finish();
+            }
+        });
+
         pkgName = getIntent().getStringExtra("pkg_name");
         String pkgVersion = getIntent().getStringExtra("pkg_version");
         isInstalled = getIntent().getBooleanExtra("pkg_installed", false);
 
         binding.pkgName.setText(pkgName);
-        binding.pkgVersion.setText("Versi: " + (pkgVersion != null ? pkgVersion : "-"));
+        binding.pkgVersion.setText("v" + (pkgVersion != null ? pkgVersion : "-"));
         binding.pkgStatus.setText(isInstalled ? "✓ Terinstall" : "Belum terinstall");
         binding.pkgStatus.setTextColor(getColor(isInstalled ?
                 com.kztutorial.termuxiwx.R.color.success_color :
@@ -65,7 +74,7 @@ public class PackageDetailActivity extends AppCompatActivity {
         binding.btnInstall.setOnClickListener(v -> {
             if (isInstalled) {
                 showConfirmDialog("Hapus Package?",
-                        "Hapus " + pkgName + "?", () -> {
+                        "Hapus " + pkgName + "?\n\nConfig file akan tetap tersimpan.", () -> {
                             pendingAction = ACTION_REMOVE;
                             showLoading(true);
                             TermuxConnector.aptRemove(this, pkgName, buildPendingIntent());
@@ -79,6 +88,15 @@ public class PackageDetailActivity extends AppCompatActivity {
                         });
             }
         });
+
+        binding.btnPurge.setOnClickListener(v ->
+            showConfirmDialog("Hapus + Bersihkan Config?",
+                "Purge " + pkgName + "?\n\nIni akan menghapus package BESERTA semua file konfigurasinya. Tidak dapat dikembalikan.",
+                () -> {
+                    pendingAction = ACTION_PURGE;
+                    showLoading(true);
+                    TermuxConnector.aptPurge(this, pkgName, buildPendingIntent());
+                }));
 
         binding.btnOpenConsole.setOnClickListener(v -> {
             Intent console = new Intent(this, ConsoleActivity.class);
@@ -97,6 +115,7 @@ public class PackageDetailActivity extends AppCompatActivity {
         binding.btnInstall.setBackgroundTintList(getColorStateList(isInstalled ?
                 com.kztutorial.termuxiwx.R.color.error_color :
                 com.kztutorial.termuxiwx.R.color.colorPrimary));
+        binding.btnPurge.setVisibility(isInstalled ? View.VISIBLE : View.GONE);
     }
 
     private void handleResult(String stdout, int exitCode) {
@@ -107,9 +126,9 @@ public class PackageDetailActivity extends AppCompatActivity {
                 updateButtons();
                 binding.pkgStatus.setText("✓ Terinstall");
                 binding.pkgStatus.setTextColor(getColor(com.kztutorial.termuxiwx.R.color.success_color));
-                Toast.makeText(this, pkgName + " berhasil diinstall! ✓", Toast.LENGTH_SHORT).show();
+                Snackbar.make(binding.getRoot(), pkgName + " berhasil diinstall! ✓", Snackbar.LENGTH_SHORT).show();
             } else {
-                Toast.makeText(this, "Gagal install " + pkgName, Toast.LENGTH_LONG).show();
+                Snackbar.make(binding.getRoot(), "Gagal install " + pkgName + ". Cek Console untuk detail.", Snackbar.LENGTH_LONG).show();
             }
         } else if (pendingAction == ACTION_REMOVE) {
             if (exitCode == 0) {
@@ -117,7 +136,19 @@ public class PackageDetailActivity extends AppCompatActivity {
                 updateButtons();
                 binding.pkgStatus.setText("Belum terinstall");
                 binding.pkgStatus.setTextColor(getColor(com.kztutorial.termuxiwx.R.color.warning_color));
-                Toast.makeText(this, pkgName + " berhasil dihapus.", Toast.LENGTH_SHORT).show();
+                Snackbar.make(binding.getRoot(), pkgName + " berhasil dihapus.", Snackbar.LENGTH_SHORT).show();
+            } else {
+                Snackbar.make(binding.getRoot(), "Gagal hapus " + pkgName + ". Cek Console untuk detail.", Snackbar.LENGTH_LONG).show();
+            }
+        } else if (pendingAction == ACTION_PURGE) {
+            if (exitCode == 0) {
+                isInstalled = false;
+                updateButtons();
+                binding.pkgStatus.setText("Belum terinstall");
+                binding.pkgStatus.setTextColor(getColor(com.kztutorial.termuxiwx.R.color.warning_color));
+                Snackbar.make(binding.getRoot(), pkgName + " + config berhasil dihapus (purge). ✓", Snackbar.LENGTH_SHORT).show();
+            } else {
+                Snackbar.make(binding.getRoot(), "Gagal purge " + pkgName + ". Cek Console untuk detail.", Snackbar.LENGTH_LONG).show();
             }
         } else if (pendingAction == ACTION_INFO) {
             binding.pkgInfo.setText(stdout.isEmpty() ? "Tidak ada info tersedia." : stdout);
@@ -135,6 +166,7 @@ public class PackageDetailActivity extends AppCompatActivity {
     private void showLoading(boolean show) {
         binding.progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
         binding.btnInstall.setEnabled(!show);
+        binding.btnPurge.setEnabled(!show);
     }
 
     private void showConfirmDialog(String title, String msg, Runnable onConfirm) {
@@ -163,7 +195,7 @@ public class PackageDetailActivity extends AppCompatActivity {
 
     @Override
     public boolean onSupportNavigateUp() {
-        onBackPressed();
+        finish();
         return true;
     }
 }

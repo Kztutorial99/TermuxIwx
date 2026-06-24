@@ -25,12 +25,14 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <androidx.cardview.widget.CardView
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:cardCornerRadius="12dp"
                 app:cardBackgroundColor="@color/surface_dark"
-                app:cardElevation="4dp">
+                app:cardElevation="4dp"
+                app:strokeColor="@color/border_color"
+                app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -50,8 +52,9 @@
                         android:id="@+id/pkg_version"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="13sp"
+                        android:textColor="@color/colorPrimary"
+                        android:fontFamily="monospace"
+                        android:textSize="12sp"
                         android:layout_marginTop="4dp" />
 
                     <TextView
@@ -60,11 +63,11 @@
                         android:layout_height="wrap_content"
                         android:textSize="13sp"
                         android:textStyle="bold"
-                        android:layout_marginTop="4dp" />
+                        android:layout_marginTop="6dp" />
 
                 </LinearLayout>
 
-            </androidx.cardview.widget.CardView>
+            </com.google.android.material.card.MaterialCardView>
 
             <ProgressBar
                 android:id="@+id/progress_bar"
@@ -82,6 +85,17 @@
                 android:text="⚡ Install Sekarang"
                 android:backgroundTint="@color/colorPrimary"
                 android:textColor="#FFFFFF" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_purge"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="🗑 Hapus + Bersihkan Config (purge)"
+                android:visibility="gone"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                app:strokeColor="@color/error_color"
+                android:textColor="@color/error_color" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_open_console"
@@ -103,11 +117,13 @@
                 android:layout_marginTop="20dp"
                 android:layout_marginBottom="8dp" />
 
-            <androidx.cardview.widget.CardView
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:cardCornerRadius="8dp"
-                app:cardBackgroundColor="@color/surface_dark">
+                app:cardBackgroundColor="@color/surface_dark"
+                app:strokeColor="@color/border_color"
+                app:strokeWidth="1dp">
 
                 <TextView
                     android:id="@+id/pkg_info"
@@ -119,7 +135,7 @@
                     android:fontFamily="monospace"
                     android:text="Memuat info..." />
 
-            </androidx.cardview.widget.CardView>
+            </com.google.android.material.card.MaterialCardView>
 
         </LinearLayout>
 
