@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/action_upgrade"
+        android:title="Upgrade Semua"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_storage"
+        android:title="Info Storage"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_about"
+        android:title="Tentang TermuxIwx"
+        app:showAsAction="never" />
+
+</menu>
