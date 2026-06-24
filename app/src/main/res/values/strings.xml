@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TermuxIwx</string>
+    <string name="search_hint">Cari package...</string>
+    <string name="btn_install">Install</string>
+    <string name="btn_remove">Hapus</string>
+    <string name="btn_update">Update Repo</string>
+    <string name="btn_upgrade">Upgrade Semua</string>
+    <string name="loading">Memuat...</string>
+    <string name="no_result">Tidak ada hasil</string>
+    <string name="termux_not_found">Termux tidak terinstall</string>
+    <string name="permission_needed">Permission RUN_COMMAND diperlukan</string>
+    <string name="install_success">Berhasil diinstall!</string>
+    <string name="install_failed">Gagal install package</string>
+</resources>
