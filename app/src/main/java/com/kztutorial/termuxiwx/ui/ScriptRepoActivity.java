@@ -41,9 +41,9 @@ public class ScriptRepoActivity extends AppCompatActivity {
             String stdout = result != null ? result.getString("stdout", "") : "";
             runOnUiThread(() -> {
                 if (exitCode == 0) {
-                    Toast.makeText(this, "✅ " + (pendingInstall != null ? pendingInstall.name : "Tool") + " berhasil diinstall!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(ScriptRepoActivity.this, "✅ " + (pendingInstall != null ? pendingInstall.name : "Tool") + " berhasil diinstall!", Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(this, "❌ Gagal install. Cek Console untuk detail.", Toast.LENGTH_LONG).show();
+                    Toast.makeText(ScriptRepoActivity.this, "❌ Gagal install. Cek Console untuk detail.", Toast.LENGTH_LONG).show();
                 }
                 pendingInstall = null;
             });
